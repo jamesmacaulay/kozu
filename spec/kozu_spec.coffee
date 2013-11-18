@@ -72,12 +72,11 @@ describe 'Kozu', ->
 
   describe '.reduce', ->
     it 'reduces an array with a regular function', ->
-      result = Kozu.reduce(_.mul, [1,2,3,4])
+      result = Kozu.reduce([1,2,3,4], _.mul)
       expect(result).toBe(24)
 
     async.it 'reduces an array with a promise-returning function', (done) ->
-      promise = Kozu.reduce(promising(_.mul), [1,2,3,4])
+      promise = Kozu.reduce([1,2,3,4], promising(_.mul))
       promise.then (n) ->
         expect(n).toBe(24)
         done()
-

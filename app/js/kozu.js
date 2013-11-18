@@ -54,7 +54,7 @@
     return process(this, input, nextState, isDone);
   }
 
-  function reduce(func, ary) {
+  function reduce(ary, func) {
     var i = 0
         length = ary.length;
     function nextState(context, state) {
