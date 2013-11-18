@@ -1,11 +1,12 @@
 {
   "name": "kozu",
   "version": "0.0.1",
-  "description": "A library for working with composable processes",
-  "homepage": "https://github.com/jamesmacaulay/kozu.js",
+  "description": "A library for promise-agnostic functional composition",
+  "homepage": "https://github.com/jamesmacaulay/kozu",
   "author": {
     "name": "James MacAulay"
   },
+  "license": "MIT",
   "main": "main.js",
   "dependencies": {
   },
