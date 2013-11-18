@@ -54,16 +54,18 @@
     return process(this, input, nextState, isDone);
   }
 
-  function reduce(ary, func) {
-    var i = 0
+  function reduce(ary, func, init) {
+    var initPresent = (arguments.length > 2),
+        i = (initPresent ? 0 : 1),
         length = ary.length;
+    if (!initPresent) init = ary[0];
     function nextState(context, state) {
-      return func.call(context, state, ary[++i]);
+      return func.call(context, state, ary[i++]);
     }
     function isDone() {
-      return i >= length-1;
+      return i >= length;
     }
-    return process(this, ary[0], nextState, isDone)
+    return process(this, init, nextState, isDone)
   }
 
   root.Kozu = {

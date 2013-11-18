@@ -75,6 +75,10 @@ describe 'Kozu', ->
       result = Kozu.reduce([1,2,3,4], _.mul)
       expect(result).toBe(24)
 
+    it 'takes an optional accumulator value to use instead of the first element of the array', ->
+      result = Kozu.reduce([1,2,3,4], _.flip(_.cons), [])
+      expect(result).toEqual([4,3,2,1])
+
     async.it 'reduces an array with a promise-returning function', (done) ->
       promise = Kozu.reduce([1,2,3,4], promising(_.mul))
       promise.then (n) ->
