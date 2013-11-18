@@ -34,7 +34,9 @@
           return funcs[i--].call(context, state);
         }
       }
-      function isDone() { return i < 0; }
+      function isDone() {
+        return i < 0;
+      }
       return process(this, arguments, nextState, isDone);
     };
   }
@@ -46,12 +48,27 @@
     function nextState(context, state) {
       return args[i++].call(context, state);
     }
-    function isDone() { return i >= argLength; }
+    function isDone() {
+      return i >= argLength;
+    }
     return process(this, input, nextState, isDone);
+  }
+
+  function reduce(func, ary) {
+    var i = 0
+        length = ary.length;
+    function nextState(context, state) {
+      return func.call(context, state, ary[++i]);
+    }
+    function isDone() {
+      return i >= length-1;
+    }
+    return process(this, ary[0], nextState, isDone)
   }
 
   root.Kozu = {
     compose: compose,
-    pipe: pipe
+    pipe: pipe,
+    reduce: reduce
   };
 })(this);

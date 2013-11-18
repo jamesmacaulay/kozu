@@ -1,6 +1,7 @@
 describe 'Kozu', ->
   async = new AsyncSpec(this)
   promising = (f) ->
+    throw TypeError unless typeof f is 'function'
     (args...) ->
       new RSVP.Promise (resolve, reject) =>
         try
@@ -67,5 +68,16 @@ describe 'Kozu', ->
       obj.composition(1).then (n) ->
         expect(spy.firstCall.thisValue).toBe(obj)
         expect(spy.secondCall.thisValue).toBe(obj)
+        done()
+
+  describe '.reduce', ->
+    it 'reduces an array with a regular function', ->
+      result = Kozu.reduce(_.mul, [1,2,3,4])
+      expect(result).toBe(24)
+
+    async.it 'reduces an array with a promise-returning function', (done) ->
+      promise = Kozu.reduce(promising(_.mul), [1,2,3,4])
+      promise.then (n) ->
+        expect(n).toBe(24)
         done()
 
