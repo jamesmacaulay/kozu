@@ -1,0 +1,18 @@
+{
+  "name": "kozu",
+  "version": "0.0.1",
+  "description": "A library for working with composable processes",
+  "homepage": "https://github.com/jamesmacaulay/kozu.js",
+  "author": {
+    "name": "James MacAulay"
+  },
+  "main": "main.js",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "lineman": ">=0.11.2",
+    "coffee-script": "~ 1.6.3",
+    "underscore": "~1.5.1",
+    "rsvp": "~2.0.4"
+  }
+}
