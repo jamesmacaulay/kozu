@@ -12,8 +12,6 @@
   },
   "devDependencies": {
     "lineman": ">=0.11.2",
-    "coffee-script": "~ 1.6.3",
-    "underscore": "~1.5.1",
-    "rsvp": "~2.0.4"
+    "coffee-script": "~ 1.6.3"
   }
 }

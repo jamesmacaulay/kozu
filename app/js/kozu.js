@@ -58,14 +58,14 @@
     var initPresent = (arguments.length > 2),
         i = (initPresent ? 0 : 1),
         length = ary.length;
-    if (!initPresent) init = ary[0];
+    if (!initPresent) { init = ary[0]; }
     function nextState(context, state) {
       return func.call(context, state, ary[i++]);
     }
     function isDone() {
       return i >= length;
     }
-    return process(this, init, nextState, isDone)
+    return process(this, init, nextState, isDone);
   }
 
   root.Kozu = {
