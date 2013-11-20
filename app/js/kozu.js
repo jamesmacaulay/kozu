@@ -9,66 +9,74 @@
     return x != null && isFunction(x.then);
   }
 
-  function process(context, state, nextState, isDone) {
-    function handleLater(value) {
-      return process(context, value, nextState, isDone);
+  function promise(resolver) {
+    new Promise(resolver);
+  }
+
+  // // returns f(g(args...)), preserving `this`
+  // function compose2LR(g, f) {
+  //   return (function() {
+  //     return f.call(this, g.apply(this, arguments));
+  //   });
+  // }
+
+  // function compose() {
+  //   return reduce(compose2LR, arguments);
+  // }
+
+  function identity(x) { return x; }
+
+  function buildKozu(deps) {
+    var isPromise = (deps && deps.isPromise) || isThenable;
+
+    function whenever(value, func) {
+      return isPromise(value) ?
+        value.then(func) :
+        func(value);
     }
-    while (!isDone()) {
-      if (isThenable(state)) {
-        return state.then(handleLater);
+
+    function applyWhenever(func, ctx, args) {
+      return func.apply(ctx, args);
+    }
+
+    function map(items, func) {
+      var i, len, results, item, promise, promises, promiseIndexes;
+      len = items.length;
+      results = new Array(len);
+      promises = [];
+      promiseIndexes = [];
+      for (i=0; i<len; i++) {
+        item = items[i];
+        if (isPromise(item)) {
+          promise = item.then(func);
+          results[i] = promise;
+          promises.push(promise);
+          promiseIndexes.push(i);
+        } else {
+          results[i] = func(item);
+        }
+      }
+      len = promises.length;
+      if (len) {
+        return Promise.all(promises).then(function(promiseResults) {
+          for (i=0; i<len; i++) {
+            results[promiseIndexes[i]] = promiseResults[i];
+          }
+          return results;
+        });
       } else {
-        state = nextState(context, state);
+        return results;
       }
     }
-    return state;
+
+    return({
+      whenever: whenever,
+      map: map,
+      applyWhenever: applyWhenever,
+      buildKozu: buildKozu
+    });
   }
 
-  function compose(/* [funcs] */) {
-    var funcs = arguments,
-        length = funcs.length;
-    return function composition() {
-      var first = funcs[length-1].apply(this, arguments),
-          i = length-2;
-      function nextState(context, state) {
-        return funcs[i--].call(context, state);
-      }
-      function isDone() {
-        return i < 0;
-      }
-      return process(this, first, nextState, isDone);
-    };
-  }
 
-  function pipe(input /*, funcs */) {
-    var args = arguments,
-        argLength = args.length;
-        i = 1; // skip the input value
-    function nextState(context, state) {
-      return args[i++].call(context, state);
-    }
-    function isDone() {
-      return i >= argLength;
-    }
-    return process(this, input, nextState, isDone);
-  }
-
-  function reduce(ary, func, init) {
-    var initPresent = (arguments.length > 2),
-        i = (initPresent ? 0 : 1),
-        length = ary.length;
-    if (!initPresent) { init = ary[0]; }
-    function nextState(context, state) {
-      return func.call(context, state, ary[i++]);
-    }
-    function isDone() {
-      return i >= length;
-    }
-    return process(this, init, nextState, isDone);
-  }
-
-  root.Kozu = {
-    compose: compose,
-    pipe: pipe,
-    reduce: reduce
-  };
+  root.kozu = buildKozu();
 })(this);

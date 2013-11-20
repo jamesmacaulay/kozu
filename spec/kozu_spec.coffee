@@ -1,86 +1,80 @@
-describe 'Kozu', ->
+describe 'kozu', ->
   async = new AsyncSpec(this)
-  promising = (f) ->
+  promises = (f) ->
     throw TypeError unless typeof f is 'function'
     (args...) ->
-      new RSVP.Promise (resolve, reject) =>
+      new Promise (resolve, reject) =>
         try
           resolve(f.apply(this, args))
         catch e
           reject(e)
-  picking = (keys...) ->
+  picks = (keys...) ->
     (obj) ->
       _.pick.apply(this, _.cons(obj, keys))
-  throwing = (error) ->
+  throws = (error) ->
     ->
       throw error
+  args = -> arguments
   double = _.partial(_.mul, 2)
 
-  describe '.compose', ->
-    it 'works like _.compose for regular functions', ->
-      incDouble = Kozu.compose(double, _.inc)
-      expect(incDouble(2)).toBe(6)
-
-    async.it 'composes promise functions and regular functions together', (done) ->
-      maxFooBar = Kozu.compose(promising(_.max), _.values, promising(picking('foo', 'bar')))
-      obj = {foo:1, bar:2, baz:3}
-      maxFooBar(obj).then (n) ->
-        expect(n).toBe(2)
+  describe ".whenever(value, func)", ->
+    it "returns func called with value immediately if value is not a promise", ->
+      picked = kozu.whenever({a: 1, b: 2}, picks('a'))
+      expect(picked).toEqual({a: 1})
+    async.it "returns a promise of the function application if value is a promise", (done) ->
+      picked = kozu.whenever(Promise.cast({a: 1, b: 2}), picks('a'))
+      picked.then (value) ->
+        expect(value).toEqual({a: 1})
         done()
 
-    async.it 'leaves error propagation for the promises to deal with', (done) ->
-      errorComposition = Kozu.compose(throwing("an error"), promising(_.identity))
-      errorComposition(1).then null, (error) ->
-        expect(error).toBe("an error")
+  describe ".map(items, func)", ->
+    it "acts like regular map with an array of non-promises", ->
+      expect(kozu.map([1,2,3], double)).toEqual([2,4,6])
+    async.it "returns a promise of an array if items contains any promises", (done) ->
+      doubled = kozu.map([1,Promise.cast(2),3,Promise.cast(4)], double)
+      doubled.then (items) ->
+        expect(items).toEqual([2,4,6,8])
         done()
 
-    async.it 'preserves context', (done) ->
-      spy = sinon.spy()
-      obj = {composition: Kozu.compose(promising(spy), spy)}
-      obj.composition(1).then (n) ->
-        expect(spy.firstCall.thisValue).toBe(obj)
-        expect(spy.secondCall.thisValue).toBe(obj)
-        done()
+  describe ".applyWhenever(func, ctx, args)", ->
+    it "acts like `apply` when working with non-promises", ->
+      picked = kozu.applyWhenever([].slice, [0,1,2], [1,2])
+      expect(picked).toEqual([1])
+    it "returns a promise if any of the arguments are promises", ->
+      # waiting for kozu.all
 
-  describe '.pipe', ->
-    it 'pipes a value through a series of regular functions', ->
-      expect(Kozu.pipe(2, _.inc, double)).toBe(6)
+  describe 'some other things', ->
+    whenever = (value, func) ->
+      if kozu.dependencies.isPromise(value)
+        value.then(func)
+      else
+        func(value)
 
-    async.it 'pipes through both promise functions and regular functions', (done) ->
-      obj = {foo:1, bar:2, baz:3}
-      maxFooBarPromise = Kozu.pipe obj,
-        promising(picking('foo', 'bar')),
-        _.values,
-        promising(_.max)
-      maxFooBarPromise.then (n) ->
-        expect(n).toBe(2)
-        done()
+    doWhenever = (func) ->
+      (value) -> whenever(value, func)
 
-    async.it 'leaves error propagation for the promises to deal with', (done) ->
-      errorPromise = Kozu.pipe(1, promising(_.identity), throwing("an error"))
-      errorPromise.then null, (error) ->
-        expect(error).toBe("an error")
-        done()
+    reduce = (func, items) ->
+      result = items[0]
+      for item in Array.prototype.slice.call(items, 1)
+        result = func(result, item)
+      result
 
-    async.it 'preserves context', (done) ->
-      spy = sinon.spy()
-      obj = {composition: (n) -> Kozu.pipe.call(this, n, spy, promising(spy))}
-      obj.composition(1).then (n) ->
-        expect(spy.firstCall.thisValue).toBe(obj)
-        expect(spy.secondCall.thisValue).toBe(obj)
-        done()
+    compose2 = (f, g) ->
+      (x) ->
+        f.call(this, g.apply(this, arguments))
 
-  describe '.reduce', ->
-    it 'reduces an array with a regular function', ->
-      result = Kozu.reduce([1,2,3,4], _.mul)
-      expect(result).toBe(24)
+    compose = () ->
+      reduce(compose2, arguments)
 
-    it 'takes an optional accumulator value to use instead of the first element of the array', ->
-      result = Kozu.reduce([1,2,3,4], _.flip(_.cons), [])
-      expect(result).toEqual([4,3,2,1])
+    identity = (x) -> x
 
-    async.it 'reduces an array with a promise-returning function', (done) ->
-      promise = Kozu.reduce([1,2,3,4], promising(_.mul))
-      promise.then (n) ->
-        expect(n).toBe(24)
-        done()
+
+    composeWhenever = () ->
+      reduce(compose2, map(doWhenever, arguments))
+
+    it 'does something', ->
+      appending = (suffix) ->
+        (x) -> "#{x}#{suffix}"
+
+      f = compose(appending(4), appending(3), appending(2), appending(1))
+      expect(f("foo")).toBe("foo1234")
