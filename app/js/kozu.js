@@ -13,10 +13,11 @@
     function handleLater(value) {
       return process(context, value, nextState, isDone);
     }
-    while (!isDone(state)) {
-      state = nextState(context, state);
-      if (!isDone(state) && isThenable(state)) {
+    while (!isDone()) {
+      if (isThenable(state)) {
         return state.then(handleLater);
+      } else {
+        state = nextState(context, state);
       }
     }
     return state;
@@ -26,18 +27,15 @@
     var funcs = arguments,
         length = funcs.length;
     return function composition() {
-      var i = length-1;
+      var first = funcs[length-1].apply(this, arguments),
+          i = length-2;
       function nextState(context, state) {
-        if (i === length-1) {
-          return funcs[i--].apply(context, state);
-        } else {
-          return funcs[i--].call(context, state);
-        }
+        return funcs[i--].call(context, state);
       }
       function isDone() {
         return i < 0;
       }
-      return process(this, arguments, nextState, isDone);
+      return process(this, first, nextState, isDone);
     };
   }
 
