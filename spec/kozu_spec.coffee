@@ -26,12 +26,22 @@ describe 'kozu', ->
       picked.then (value) ->
         expect(value).toEqual({a: 1})
         done()
+    async.it "returns a promise when func is a promise", (done) ->
+      doubled = kozu.whenever(2, Promise.cast(double))
+      doubled.then (value) ->
+        expect(value).toBe(4)
+        done()
 
   describe ".map(items, func)", ->
     it "acts like regular map with an array of non-promises", ->
-      expect(kozu.map([1,2,3], double)).toEqual([2,4,6])
+      expect(kozu.map([1,2,3,4], double)).toEqual([2,4,6,8])
     async.it "returns a promise of an array if items contains any promises", (done) ->
       doubled = kozu.map([1,Promise.cast(2),3,Promise.cast(4)], double)
+      doubled.then (items) ->
+        expect(items).toEqual([2,4,6,8])
+        done()
+    async.it "returns a promise when func is a promise", (done) ->
+      doubled = kozu.map([1,2,3,4], Promise.cast(double))
       doubled.then (items) ->
         expect(items).toEqual([2,4,6,8])
         done()
