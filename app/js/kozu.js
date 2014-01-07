@@ -6,10 +6,13 @@
     // ===
     // using underscore temporarily to sketch:
     var extend = kozu.extend = _.extend;
-    var some = kozu.some = _.some;
+    var any = kozu.any = _.any;
     var map = kozu.map = _.map;
     var filter = kozu.filter = _.filter;
     var reduce = kozu.reduce = _.reduce;
+    var toArray = kozu.toArray = _.toArray;
+    var isArray =  kozu.isArray = _.isArray;
+    var isArguments = kozu.isArguments = _.isArguments;
 
     function merge() {
       return _.extend({}, arguments);
@@ -74,13 +77,19 @@
     kozu.whenever = whenever;
 
     function all(items) {
-      return some(items, isPromise) ? Promise.all(items) : results;
+      if (isArguments(items)) { items = slice(items); }
+      if (isArray(items)) {
+        return any(items, isPromise) ? Promise.all(items) : items;
+      } else {
+        return items;
+      }
     }
     kozu.all = all;
 
     function cons(head, tail) {
-      return [head].concat(tail);
+      return [head].concat(toArray(tail));
     }
+    kozu.cons = cons;
 
     // function agnosticApply(func, ctx, args) {
     //   return whenever(all([func, ctx].concat(args)), function(values) {
@@ -88,16 +97,50 @@
     //   });
     // }
 
+
+    function transformInputs(ctx, args, func) {
+      return func([ctx, func(args)]);
+    }
+    // transformInputs(this, arguments, all);
+    // transformInputs(this, arguments, compose(partial(mapWith, all), all));
+    // // map(all([ctx, map(all(args), all)]), all)
+    // transformInputs(this, arguments, compose(all, partial(mapWith, all)));
+    // // map([ctx, map(args, all)], all)
+
     function agnostic(func) {
       return (function() {
-        return whenever(all(cons(this, arguments)), function(ctxAndArgs) {
-          func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+        return whenever(transformInputs(this, arguments, all), function(ctxAndArgs) {
+          return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
         });
       });
     }
     kozu.agnostic = agnostic;
 
+    function deepAll(items) {
+      return all(map(items, all));
+    }
+
+    function collectionAgnostic(func) {
+      return (function() {
+        return whenever(transformInputs(this, arguments, deepAll), function(ctxAndArgs) {
+          return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+        });
+      });
+    }
+    kozu.collectionAgnostic = collectionAgnostic;
+
     var agnosticApply = agnostic(apply);
+
+    function higherOrderAgnostic(func) {
+      if (isFunction(func)) {
+        return agnostic(function() {
+          return agnosticApply(func, this, map(arguments, higherOrderAgnostic));
+        });
+      } else {
+        return func;
+      }
+    }
+    kozu.higherOrderAgnostic = higherOrderAgnostic;
 
     // what would a generalized deep* function look like?
     function deepAgnostic(func) {
@@ -138,6 +181,7 @@
   //   deepAgnostic: mapValues(simple, deepAgnostic),
   //   forced: mapValues(simple, forced)
   // });
+  // agnosticUnderscore = mapValues(_, agnostic)
   // var myLib = mapValues(kozu.simple, myWrapper);
   // var myComplexLib = mapValues(kozu.simple, compose(middleware1, middleware2));
   root.kozu = buildKozu();
