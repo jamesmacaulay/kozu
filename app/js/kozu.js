@@ -1,153 +1,135 @@
 (function(root){
-  var protoSlice = Array.prototype.slice;
+  var pSlice = Array.prototype.slice;
 
   function buildKozu(opts) {
     var kozu = {};
-    // ===
-    // using underscore temporarily to sketch:
-    var extend = kozu.extend = _.extend;
-    var any = kozu.any = _.any;
-    var map = kozu.map = _.map;
-    var filter = kozu.filter = _.filter;
-    var reduce = kozu.reduce = _.reduce;
-    var toArray = kozu.toArray = _.toArray;
-    var isArray =  kozu.isArray = _.isArray;
-    var isArguments = kozu.isArguments = _.isArguments;
 
-    function merge() {
-      return _.extend({}, arguments);
-    }
-    kozu.merge = merge;
-    // ===
+    // =====================
+    // generic utility functions
+    // =====================
 
-    function identity(x) {
-      return x;
-    }
-    kozu.identity = identity;
-
-    function args() {
-      return arguments;
-    }
-    kozu.args = args;
-
-    function functionalize(method) {
+    var functionalize = kozu.functionalize = function functionalize(method) {
       return function(ctx /*, args */) {
-        return method.apply(ctx, protoSlice.call(arguments, 1));
+        return method.apply(ctx, pSlice.call(arguments, 1));
       };
-    }
-    kozu.functionalize = functionalize;
+    };
 
     var call = kozu.call = functionalize(Function.prototype.call);
 
     var apply = kozu.apply = functionalize(Function.prototype.apply);
 
-    var slice = kozu.slice = functionalize(protoSlice);
+    var slice = kozu.slice = functionalize(pSlice);
 
-    // constructing(Array)(1,2,3) => [1,2,3]
-    // generated from CoffeeScript: (klass) -> new klass(arguments...)
-    function constructing(klass) {
-      return (function(func, args, Ctor) {
-        Ctor.prototype = func.prototype;
-        var child = new Ctor(), result = func.apply(child, args);
-        return Object(result) === result ? result : child;
-      })(klass, arguments, function(){});
-    }
-    kozu.constructing = constructing;
-
-    function isFunction(x) {
+    var isFunction = kozu.isFunction = function isFunction(x) {
       return typeof x === 'function';
-    }
-    kozu.isFunction = isFunction;
-
-    // "has a .then method"
-    function isThenable(x) {
-      return x != null && kozu.isFunction(x.then);
-    }
-    kozu.isThenable = isThenable;
-    var isPromise = kozu.isPromise = isThenable;
-
-    var makePromise = kozu.makePromise = function makePromise(resolver) {
-      return new Promise(resolver);
     };
 
-    // TODO: try/catch and return rejecting promise on error
-    function whenever(value, func) {
-      return isPromise(value) ? value.then(func) : func(value);
-    }
-    kozu.whenever = whenever;
+    var mapper = kozu.mapper = function mapper(func) {
+      return (function mapResult(items) {
+        return _.map(items, func);
+      });
+    };
+    // ======================
 
-    function all(items) {
-      if (isArguments(items)) { items = slice(items); }
-      if (isArray(items)) {
-        return any(items, isPromise) ? Promise.all(items) : items;
+
+    // "has a .then method"
+    var isThenable = kozu.isThenable = function isThenable(x) {
+      return x != null && kozu.isFunction(x.then);
+    };
+    var isPromise = kozu.isPromise = isThenable;
+
+    var whenever = kozu.whenever = function whenever(valueOrPromise, onResolve, onReject) {
+      if (isPromise(valueOrPromise)) {
+        return valueOrPromise.then(onResolve, onReject);
+      } else {
+        try {
+          return onResolve(valueOrPromise);
+        } catch(e) {
+          return Promise.reject(e).catch(onReject);
+        }
+      }
+    };
+
+    var catching = kozu.catching = function catching(valueOrPromise, onReject) {
+      if (isPromise(valueOrPromise)) {
+        return valueOrPromise.catch(onReject);
+      } else {
+        return valueOrPromise;
+      }
+    };
+
+    var all = kozu.all = function all(items) {
+      if (_.isArguments(items)) { items = slice(items); }
+      if (_.isArray(items) && _.any(items, isPromise)) {
+        return Promise.all(items);
       } else {
         return items;
       }
-    }
-    kozu.all = all;
-
-    function cons(head, tail) {
-      return [head].concat(toArray(tail));
-    }
-    kozu.cons = cons;
-
-    // function agnosticApply(func, ctx, args) {
-    //   return whenever(all([func, ctx].concat(args)), function(values) {
-    //     var func = values[0], ctx = values[1], 
-    //   });
-    // }
-
+    };
 
     function transformInputs(ctx, args, func) {
       return func([ctx, func(args)]);
     }
-    // transformInputs(this, arguments, all);
-    // transformInputs(this, arguments, compose(partial(mapWith, all), all));
-    // // map(all([ctx, map(all(args), all)]), all)
-    // transformInputs(this, arguments, compose(all, partial(mapWith, all)));
-    // // map([ctx, map(args, all)], all)
 
-    function agnostic(func) {
-      return (function() {
-        return whenever(transformInputs(this, arguments, all), function(ctxAndArgs) {
-          return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+    function inputTransformer(func) {
+      return function() {
+        var thisAndArgs = transformInputs(this, arguments);
+        return func.apply(thisAndArgs[0], thisAndArgs[1]);
+      };
+    }
+
+    function buildAgnosticHOF(inputTransformer) {
+      return (function (func) {
+        if (!isFunction(func)) {return func;}
+        return (function() {
+          return whenever(transformInputs(this, arguments, inputTransformer), function(ctxAndArgs) {
+            return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+          });
         });
       });
     }
-    kozu.agnostic = agnostic;
 
-    function deepAll(items) {
-      return all(map(items, all));
-    }
-
-    function collectionAgnostic(func) {
-      return (function() {
-        return whenever(transformInputs(this, arguments, deepAll), function(ctxAndArgs) {
-          return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
-        });
-      });
-    }
-    kozu.collectionAgnostic = collectionAgnostic;
+    var agnostic = kozu.agnostic = buildAgnosticHOF(all);
+    kozu.collectionAgnostic = buildAgnosticHOF(
+      _.compose(all, mapper(all))
+    );
+    kozu.functionWrappingAgnostic = buildAgnosticHOF(
+      _.compose(all, mapper(agnostic))
+    );
+    kozu.functionWrappingCollectionAgnostic = buildAgnosticHOF(
+      _.compose(all, mapper(_.compose(agnostic, all)))
+    );
 
     var agnosticApply = agnostic(apply);
 
-    function higherOrderAgnostic(func) {
-      if (isFunction(func)) {
-        return agnostic(function() {
-          return agnosticApply(func, this, map(arguments, higherOrderAgnostic));
-        });
-      } else {
-        return func;
-      }
-    }
-    kozu.higherOrderAgnostic = higherOrderAgnostic;
+
+    // function collectionAgnostic(func) {
+    //   return (function() {
+    //     return whenever(transformInputs(this, arguments, allNested1), function(ctxAndArgs) {
+    //       return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+    //     });
+    //   });
+    // }
+    // kozu.collectionAgnostic = collectionAgnostic;
+
+
+    // function higherOrderAgnostic(func) {
+    //   if (isFunction(func)) {
+    //     return agnostic(function() {
+    //       return agnosticApply(func, this, _.map(arguments, higherOrderAgnostic));
+    //     });
+    //   } else {
+    //     return func;
+    //   }
+    // }
+    // kozu.higherOrderAgnostic = higherOrderAgnostic;
 
     // what would a generalized deep* function look like?
     function deepAgnostic(func) {
       if (isFunction(func)) {
         return (function() {
           // this isn't quite right:
-          // return agnosticApply(func, this, map(arguments, deepAgnostic));
+          // return agnosticApply(func, this, _.map(arguments, deepAgnostic));
         });
       } else {
         return func;
@@ -155,34 +137,8 @@
     }
     kozu.deepAgnostic = deepAgnostic;
 
-    // 
-    // function infect(func, mod) {};
-
-    // override object properties
-    extend(kozu, opts);
-
-    // override just a few locals
-    isPromise = kozu.isPromise;
-    makePromise = kozu.makePromise;
-
     return kozu;
   }
 
-  // var simple = {
-  //   apply: function() {},
-  //   call: function() {},
-  //   map: function() {},
-  //   filter: function() {},
-  //   compose: function() {},
-  // }
-  // var kozu = merge(simple, {
-  //   simple: simple,
-  //   agnostic: mapValues(simple, agnostic),
-  //   deepAgnostic: mapValues(simple, deepAgnostic),
-  //   forced: mapValues(simple, forced)
-  // });
-  // agnosticUnderscore = mapValues(_, agnostic)
-  // var myLib = mapValues(kozu.simple, myWrapper);
-  // var myComplexLib = mapValues(kozu.simple, compose(middleware1, middleware2));
   root.kozu = buildKozu();
 })(this);
