@@ -78,12 +78,56 @@
       };
     }
 
+    function handlingWheneverWith(onResolve, onReject) {
+      return (function(valueOrPromise) {
+        return whenever(valueOrPromise, onResolve, onReject);
+      });
+    }
+
+    function applySplat(func, thisAndArgs) {
+      return func.apply(thisAndArgs[0], thisAndArgs[1]);
+    }
+
+    function packingInputs(func) {
+      return (function() {
+        return func([this, arguments]);
+      });
+    }
+
+    function unpackingInputs(func) {
+      return (function(thisAndArgs) {
+        return func.apply(thisAndArgs[0], thisAndArgs[1]);
+      });
+    }
+
     function buildAgnosticHOF(inputTransformer) {
       return (function (func) {
         if (!isFunction(func)) {return func;}
         return (function() {
-          return whenever(transformInputs(this, arguments, inputTransformer), function(ctxAndArgs) {
-            return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+          var inputs = transformInputs(this, arguments, inputTransformer);
+          var inputsHandler = unpackingInputs(func);
+          return whenever(inputs, inputsHandler);
+        });
+      });
+    }
+
+    // function buildAgnosticHOF(inputTransformer) {
+    //   return (function (func) {
+    //     if (!isFunction(func)) {return func;}
+    //     return (function() {
+    //       return whenever(transformInputs(this, arguments, inputTransformer), function(thisAndArgs) {
+    //         return func.apply(thisAndArgs[0], thisAndArgs[1]);
+    //       });
+    //     });
+    //   });
+    // }
+
+    function buildHOF(inputTransformer) {
+      return (function (func) {
+        if (!isFunction(func)) {return func;}
+        return (function() {
+          return whenever(transformInputs(this, arguments, inputTransformer), function(thisAndArgs) {
+            return func.apply(thisAndArgs[0], thisAndArgs[1]);
           });
         });
       });
@@ -105,8 +149,8 @@
 
     // function collectionAgnostic(func) {
     //   return (function() {
-    //     return whenever(transformInputs(this, arguments, allNested1), function(ctxAndArgs) {
-    //       return func.apply(ctxAndArgs[0], ctxAndArgs[1]);
+    //     return whenever(transformInputs(this, arguments, allNested1), function(thisAndArgs) {
+    //       return func.apply(thisAndArgs[0], thisAndArgs[1]);
     //     });
     //   });
     // }
