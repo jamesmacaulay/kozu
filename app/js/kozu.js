@@ -67,6 +67,17 @@
       }
     };
 
+    var allValues = kozu.allValues = (function allValues(object) {
+      var values = _.values(object);
+      if (_.any(values, isPromise)) {
+        return whenever(Promise.all(values), function(settledValues) {
+          return _.object(_.keys(object), settledValues);
+        });
+      } else {
+        return _.clone(object);
+      }
+    });
+
     function transformInputs(ctx, args, func) {
       return func([ctx, func(args)]);
     }
@@ -137,6 +148,9 @@
     kozu.collectionAgnostic = buildAgnosticHOF(
       _.compose(all, mapper(all))
     );
+    kozu.objectAgnostic = buildAgnosticHOF(
+      _.compose(all, mapper(allValues))
+    );
     kozu.functionWrappingAgnostic = buildAgnosticHOF(
       _.compose(all, mapper(agnostic))
     );
@@ -145,6 +159,18 @@
     );
 
     var agnosticApply = agnostic(apply);
+
+
+
+    var transformer = kozu.transformer = agnostic(function transformer(templateObject) {
+      return (function(inputObject) {
+        var result = {};
+        for (var key in templateObject) {
+          result[key] = templateObject[key](inputObject);
+        }
+        return result;
+      });
+    });
 
 
     // function collectionAgnostic(func) {

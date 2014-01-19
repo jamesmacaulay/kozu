@@ -18,6 +18,27 @@ describe "kozu", ->
   double = _.partial(_.mul, 2)
   protoSlice = Array.prototype.slice
 
+  describe ".allValues(object)", ->
+    it "returns a copy of the object if its values don't contain any promises", ->
+      obj = {a: 1, b: 2}
+      copy = kozu.allValues(obj)
+      expect(copy).toEqual(obj)
+      expect(copy).not.toBe(obj)
+
+    async.it "returns a promise if any of the object's values is a promise", (done) ->
+      kozu.allValues({a: 1, b: Promise.cast(2)}).then (result) ->
+        expect(result).toEqual({a: 1, b: 2})
+        done()
+
+  describe ".transformer(object)", ->
+    it "returns a function which transforms other objects", ->
+      person =
+        firstName: "Mary"
+        lastName: "Contrary"
+      transform = kozu.transformer
+        name: ({firstName, lastName}) -> "#{firstName} #{lastName}"
+      expect(transform(person)).toEqual({name: "Mary Contrary"})
+
   describe ".call(func, ctx, [args...])", ->
     it "acts like Function.prototype.call", ->
       sliced = kozu.call(protoSlice, [1,2,3], 1, 2)
@@ -43,7 +64,7 @@ describe "kozu", ->
           expect(result).toEqual([2])
           done()
 
-  describe ".higherOrderAgnostic(func)", ->
+  describe ".collectionAgnostic(func)", ->
     higherOrderAgnosticCall = kozu.collectionAgnostic(kozu.call)
     higherOrderAgnosticMap = kozu.collectionAgnostic(_.map)
 
