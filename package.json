@@ -7,11 +7,26 @@
     "name": "James MacAulay"
   },
   "license": "MIT",
-  "main": "main.js",
-  "dependencies": {
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jamesmacaulay/kozu.git"
   },
+  "bugs": {
+    "url": "https://github.com/jamesmacaulay/kozu/issues"
+  },
+  "main": "./lib/kozu.js",
+  "dependencies": {},
   "devDependencies": {
-    "lineman": ">=0.11.2",
-    "coffee-script": "~ 1.6.3"
+    "grunt": "~0.4.2",
+    "browserify": "~3.20.0",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "grunt-contrib-coffee": "~0.8.2",
+    "grunt-browserify": "~1.3.0",
+    "grunt-testem": "~0.5.1",
+    "mocha": "~1.17.0",
+    "chai": "~1.8.1",
+    "chai-as-promised": "~4.1.0",
+    "es6-promise": "~0.1.1"
   }
 }

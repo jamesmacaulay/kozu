@@ -1,0 +1,17 @@
+{
+  "curly": true,
+  "eqeqeq": true,
+  "globals": {
+    "describe": false,
+    "it": false
+  },
+  "immed": true,
+  "indent": 2,
+  "latedef": true,
+  "newcap": true,
+  "noarg": true,
+  "node": true,
+  "nonew": true,
+  "sub": true,
+  "undef": true
+}

@@ -1,0 +1,7 @@
+{
+  "framework": "mocha",
+  "src_files": ["generated/browserify/test/common/kozu_test.js"],
+  "serve_files": ["generated/browserify/test/common/kozu_test.js"],
+  "test_page": "test/browser/index.html",
+  "launch_in_dev": [ "chrome" ]
+}
