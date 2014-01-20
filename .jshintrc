@@ -3,7 +3,8 @@
   "eqeqeq": true,
   "globals": {
     "describe": false,
-    "it": false
+    "it": false,
+    "Promise": false
   },
   "immed": true,
   "indent": 2,
