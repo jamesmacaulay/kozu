@@ -34,18 +34,36 @@ describe "kozu.promises.whenever(x, onResolve, onReject)", ->
 describe "kozu.promises.allArrayItems(items)", ->
   it "returns a copy of items when items is an array of non-promise values", ->
     nums = [1,2,3]
-    result = promises.allArrayItems([1,2,3])
-    expect(result).to.deep.equal([1,2,3])
+    result = promises.allArrayItems(nums)
+    expect(result).to.deep.equal(nums)
     expect(result).to.not.equal(nums)
+
   it "works with Arguments objects", ->
     nums = args(1,2,3)
     result = promises.allArrayItems(args(1,2,3))
     expect(result).to.deep.equal([1,2,3])
     expect(result).to.not.equal(nums)
+
   it "returns a promise of the whole result if any of the items are promises", ->
     result = promises.allArrayItems([1, Promise.cast(2), 3, Promise.cast(4)])
     expect(result).to.eventually.deep.equal([1,2,3,4])
+
   it "returns a promise which is rejected if one of the item promises rejects", ->
     result = promises.allArrayItems([1, Promise.cast(2), Promise.reject(new Error("foo")), Promise.cast(4)])
+    expect(result).to.be.rejectedWith("foo")
+
+describe "kozu.promises.allObjectValues(object)", ->
+  it "returns a copy of object when none of the object's values are promises", ->
+    nums = {a: 1, b: 2, c: 3}
+    result = promises.allObjectValues(nums)
+    expect(result).to.deep.equal(nums)
+    expect(result).to.not.equal(nums)
+
+  it "returns a promise of the whole result if any of the object's values are promises", ->
+    result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: 3, d: Promise.cast(4)})
+    expect(result).to.eventually.deep.equal({a: 1, b: 2, c: 3, d: 4})
+
+  it "returns a promise which is rejected if one of the value promises rejects", ->
+    result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: Promise.reject(new Error("foo")), d: Promise.cast(4)})
     expect(result).to.be.rejectedWith("foo")
 
