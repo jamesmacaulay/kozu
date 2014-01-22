@@ -1,4 +1,5 @@
-expect = require("chai").expect
+{expect} = require("chai")
+sinon = require("sinon")
 promises = require("../../../../../lib/kozu/promises")
 
 inc = (x) -> 1 + x
@@ -27,9 +28,8 @@ describe "kozu.promises.whenever(x, onResolve, onReject)", ->
   it "returns result of onResolve called with x if x is not a promise", ->
     expect(promises.whenever(1, inc)).to.equal(2)
 
-  # rejectedWith from chai-as-promised seems to be broken
   it "returns a rejection promise handled with onReject when an error is thrown applying onResolve to non-promise x", ->
-    expect(promises.whenever(1, -> throw new Error)).to.be.rejected
+    expect(promises.whenever(1, -> throw new Error("foo"))).to.be.rejectedWith("foo")
 
 describe "kozu.promises.allArrayItems(items)", ->
   it "returns a copy of items when items is an array of non-promise values", ->
@@ -45,6 +45,7 @@ describe "kozu.promises.allArrayItems(items)", ->
   it "returns a promise of the whole result if any of the items are promises", ->
     result = promises.allArrayItems([1, Promise.cast(2), 3, Promise.cast(4)])
     expect(result).to.eventually.deep.equal([1,2,3,4])
-  it "casts thenables as real promises", ->
-    # ...
+  it "returns a promise which is rejected if one of the item promises rejects", ->
+    result = promises.allArrayItems([1, Promise.cast(2), Promise.reject(new Error("foo")), Promise.cast(4)])
+    expect(result).to.be.rejectedWith("foo")
 
