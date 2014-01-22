@@ -1,9 +1,11 @@
 {expect} = require("chai")
 sinon = require("sinon")
 promises = require("../../../../../lib/kozu/promises")
+core = require("../../../../../lib/kozu/core")
 
 inc = (x) -> 1 + x
 args = -> arguments
+plus = (a,b) -> a + b
 
 describe "kozu.promises.isThenable(x)", ->
   it "returns false if argument is null", ->
@@ -66,4 +68,14 @@ describe "kozu.promises.allObjectValues(object)", ->
   it "returns a promise which is rejected if one of the value promises rejects", ->
     result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: Promise.reject(new Error("foo")), d: Promise.cast(4)})
     expect(result).to.be.rejectedWith("foo")
+
+describe "kozu.promises.agnostic(func)", ->
+  plusMethod = core.methodize(plus)
+  it "returns a function which acts like func when its arguments are non-promise values", ->
+    result = promises.agnostic(plusMethod).call(2,3)
+    expect(result).to.equal(5)
+
+  it "returns a function which returns a promise when its context is a promise", ->
+    result = promises.agnostic(plusMethod).call(Promise.cast(2), 3)
+    expect(result).to.eventually.equal(5)
 

@@ -10,3 +10,11 @@ describe "kozu.core.functionalize", ->
       nameWithSuffix: (suffix) -> @name + suffix
     nameWithSuffixFunction = core.functionalize(person.nameWithSuffix)
     expect(nameWithSuffixFunction(person, "!")).to.equal("Jim!")
+
+describe "kozu.core.compose", ->
+  it "calls from right to left", ->
+    plus1 = (n) -> n+1
+    times2 = (n) -> n*2
+    times2plus1 = core.compose(plus1, times2)
+    expect(times2plus1(3)).to.equal(7)
+
