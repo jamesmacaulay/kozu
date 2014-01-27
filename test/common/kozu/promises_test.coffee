@@ -69,13 +69,23 @@ describe "kozu.promises.allObjectValues(object)", ->
     result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: Promise.reject(new Error("foo")), d: Promise.cast(4)})
     expect(result).to.be.rejectedWith("foo")
 
-describe "kozu.promises.agnostic(func)", ->
+describe "kozu.promises.shallowAgnostic(func)", ->
   plusMethod = core.methodize(plus)
   it "returns a function which acts like func when its arguments are non-promise values", ->
-    result = promises.agnostic(plusMethod).call(2,3)
+    result = promises.shallowAgnostic(plusMethod).call(2,3)
     expect(result).to.equal(5)
 
   it "returns a function which returns a promise when its context is a promise", ->
-    result = promises.agnostic(plusMethod).call(Promise.cast(2), 3)
+    result = promises.shallowAgnostic(plusMethod).call(Promise.cast(2), 3)
     expect(result).to.eventually.equal(5)
+
+describe "kozu.promises.agnostic.objectTemplate", ->
+  it "is pretty nice", ->
+    input =
+      first: Promise.cast("Zoe")
+      last: "Yodeller"
+    namer = promises.agnostic.objectTemplate(name: core.extracting('first', 'last')(core.joiner(' ')))
+    expect(namer(input)).to.eventually.deep.equal({name: "Zoe Yodeller"})
+
+
 

@@ -30,3 +30,19 @@ describe "kozu.core.arrayTransformer(functions)", ->
   it "returns a function which takes an array and maps its items with corresponding functions", ->
     tmpl = core.arrayTransformer([plus1, times2, exclaim])
     expect(tmpl([1, 2, 3])).to.deep.equal([2, 4, "3!"])
+
+describe "kozu.core.objectTemplate(functionSchemaObject)", ->
+  it "returns a function which applies function values of the given schema to its argument", ->
+    tmpl = core.objectTemplate
+      name: core.extracting('first', 'last') core.joiner(' ')
+    expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(name: "Larry Zozo")
+
+describe "kozu.core.objectPropertyTemplate(functionSchemaObject)", ->
+  it "returns a function which applies function values of the given schema to the corresponding properties of its argument", ->
+    tmpl = core.objectPropertyTemplate(name: exclaim)
+    expect(tmpl(name: "Larry Zozo")).to.deep.equal(name: "Larry Zozo!")
+
+describe "kozu.core.wrapReturnedValue(func)", ->
+  it "returns a function which takes a function and returns a function which wraps its return value", ->
+    plus1wrapper = core.wrapReturnedValue(plus1)
+    expect(plus1wrapper(times2)(5)).to.equal(11)  
