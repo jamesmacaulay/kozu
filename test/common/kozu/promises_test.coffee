@@ -79,12 +79,16 @@ describe "kozu.promises.shallowAgnostic(func)", ->
     result = promises.shallowAgnostic(plusMethod).call(Promise.cast(2), 3)
     expect(result).to.eventually.equal(5)
 
+  it "returns a function which returns a promise when one of its arguments is a promise", ->
+    result = promises.shallowAgnostic(plus)(2, Promise.cast(3))
+    expect(result).to.eventually.equal(5)
+
 describe "kozu.promises.agnostic.objectTemplate", ->
   it "is pretty nice", ->
     input =
       first: Promise.cast("Zoe")
       last: "Yodeller"
-    namer = promises.agnostic.objectTemplate(name: core.extracting('first', 'last')(core.joiner(' ')))
+    namer = promises.agnostic.objectTemplate(name: core.extractsKeys('first', 'last')(core.argumentJoiner(' ')))
     expect(namer(input)).to.eventually.deep.equal({name: "Zoe Yodeller"})
 
 
