@@ -56,7 +56,7 @@ describe "kozu.core.cons(x, xs)", ->
   it "returns a new array with x prepended before xs", ->
     expect(core.cons(1, [2, 3])).to.deep.equal([1,2,3])
 
-describe "partialRest(func, ... args)", ->
+describe "kozu.core.partialRest(func, ... args)", ->
   it "returns a partial application of func, starting from the second argument", ->
     makeArray = behaviors.variadic(core.identity)
     somethingTwoThree = core.partialRest(makeArray, 2, 3)
