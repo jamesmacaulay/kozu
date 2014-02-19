@@ -1,7 +1,8 @@
 {expect} = require("chai")
 sinon = require("sinon")
-promises = require("../../../../../lib/kozu/promises")
 core = require("../../../../../lib/kozu/core")
+behaviors = require("../../../../../lib/kozu/behaviors")
+promises = require("../../../../../lib/kozu/promises")
 
 inc = (x) -> 1 + x
 args = -> arguments
@@ -70,7 +71,7 @@ describe "kozu.promises.allObjectValues(object)", ->
     expect(result).to.be.rejectedWith("foo")
 
 describe "kozu.promises.shallowAgnostic(func)", ->
-  plusMethod = core.methodize(plus)
+  plusMethod = behaviors.methodize(plus)
   it "returns a function which acts like func when its arguments are non-promise values", ->
     result = promises.shallowAgnostic(plusMethod).call(2,3)
     expect(result).to.equal(5)
@@ -88,7 +89,9 @@ describe "kozu.promises.agnostic.objectTemplate", ->
     input =
       first: Promise.cast("Zoe")
       last: "Yodeller"
-    namer = promises.agnostic.objectTemplate(name: core.extractsKeys('first', 'last')(core.argumentJoiner(' ')))
+    namer = promises.agnostic.objectTemplate
+      name: behaviors.extractsKeys('first', 'last') ->
+        Array::join.call(arguments, ' ')
     expect(namer(input)).to.eventually.deep.equal({name: "Zoe Yodeller"})
 
 

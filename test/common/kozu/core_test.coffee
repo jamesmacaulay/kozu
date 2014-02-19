@@ -1,9 +1,7 @@
 expect = require("chai").expect
-sinon = require("sinon")
 core = require("../../../../../lib/kozu/core")
-_ = require("lodash")
+behaviors = require("../../../../../lib/kozu/behaviors")
 
-args = -> arguments
 plus1 = (n) -> n+1
 times2 = (n) -> n*2
 exclaim = (x) -> "#{x}!"
@@ -18,11 +16,6 @@ describe "kozu.core.partialRest(func, args...)", ->
     mathy = core.partialRest(core.compose, plus1, times2)
     expect(mathy(exclaim) 3).to.equal("7!")
 
-describe "kozu.core.arrayTransformer(functions)", ->
-  it "returns a function which takes an array and maps its items with corresponding functions", ->
-    tmpl = core.arrayTransformer([plus1, times2, exclaim])
-    expect(tmpl([1, 2, 3])).to.deep.equal([2, 4, "3!"])
-
 describe "kozu.core.get(obj, key)", ->
   it "returns obj[key]", ->
     expect(core.get({foo: 2}, "foo")).to.equal(2)
@@ -31,6 +24,10 @@ describe "kozu.core.getter(key)", ->
   it "returns a function which takes an object and returns obj[key]", ->
     fooGetter = core.getter('foo')
     expect(fooGetter({foo: 2})).to.equal(2)
+
+describe "kozu.core.args", ->
+  it "returns its arguments object", ->
+    expect(Object::toString.call(core.args(1,2,3))).to.equal("[object Arguments]")
 
 describe "kozu.core.factory(constructor)", ->
   it "returns a variadic function which returns a new instance of the constructor with the given arguments", ->
@@ -46,14 +43,9 @@ describe "kozu.core.multiGet(obj, keys)", ->
   it "returns an array of the values in obj at keys", ->
     expect(core.multiGet({foo: 1, bar: 2, baz: 3}, ['bar', 'foo'])).to.deep.equal([2,1])
 
-describe "kozu.core.extractsKeys(... keys)", ->
-  it "returns a function wrapper which takes a variadic function and returns a function which takes an object and uses the values at the given keys as the arguments for the original", ->
-    fooPlusBar = core.extractsKeys('foo', 'bar')((foo, bar) -> foo + bar)
-    expect(fooPlusBar({foo: 1, bar: 2, baz: 3})).to.equal(3)
-
 describe "kozu.core.castArgumentsAsArray(x)", ->
   it "returns a new array copy when x is an Arguments object", ->
-    ary = core.castArgumentsAsArray(args(1,2,3))
+    ary = core.castArgumentsAsArray(core.args(1,2,3))
     expect(ary).to.deep.equal([1,2,3])
     expect(core.isArray(ary)).to.equal(true)
   it "returns x when x is not an Arguments object", ->
@@ -64,84 +56,11 @@ describe "kozu.core.cons(x, xs)", ->
   it "returns a new array with x prepended before xs", ->
     expect(core.cons(1, [2, 3])).to.deep.equal([1,2,3])
 
-describe "kozu.core.functionalize", ->
-  it "wraps a method-style function (one which uses `this`) such that it only uses arguments", ->
-    person =
-      name: "Jim"
-      nameWithSuffix: (suffix) -> @name + suffix
-    personNameWithSuffix = core.functionalize(person.nameWithSuffix)
-    expect(personNameWithSuffix(person, "!")).to.equal("Jim!")
-  it "is aliased as rotatesThisOutOfArguments", ->
-    expect(core.rotatesThisOutOfArguments).to.equal(core.functionalize)
-
-describe "methodize", ->
-  it "wraps a function which does not rely on `this`, turning it into a method-style function such that the original's first argument is supplied as `this` by the caller", ->
-    personNameWithSuffix = (person, suffix) -> person.name + suffix
-    person =
-      name: "Jim"
-      nameWithSuffix: core.methodize(personNameWithSuffix)
-    expect(person.nameWithSuffix("!")).to.equal("Jim!")
-  it "is aliased as rotatesThisIntoArguments", ->
-    expect(core.rotatesThisIntoArguments).to.equal(core.methodize)
-
-describe "congealed", ->
-  it "takes a variadic function and returns a unary version which spreads a single array argument to the original", ->
-    arrayToArgs = core.congealed(args)
-    expect(arrayToArgs([1,2,3])).to.deep.equal(args(1,2,3))
-  it "is aliased as spreadsArrayArgument", ->
-    expect(core.spreadsArrayArgument).to.equal(core.congealed)
-
-describe "variadic", ->
-  it "takes a function which takes a single array argument and returns a variadic version which passes a slice of its arguments as a single argument to the original", ->
-    makeArray = core.variadic(core.identity)
-    expect(makeArray(1,2,3)).to.deep.equal([1,2,3])
-  it "is aliased as gathersArguments", ->
-    expect(core.gathersArguments).to.equal(core.variadic)
-
-describe "flip2", ->
-  it "takes a function of 2 arguments and returns a new version of the function with its arguments flipped", ->
-    divide = (a, b) -> a / b
-    expect(core.flip2(divide)(2, 4)).to.equal(2)
-
 describe "partialRest(func, ... args)", ->
   it "returns a partial application of func, starting from the second argument", ->
-    makeArray = core.variadic(core.identity)
+    makeArray = behaviors.variadic(core.identity)
     somethingTwoThree = core.partialRest(makeArray, 2, 3)
     expect(somethingTwoThree(1)).to.deep.equal([1,2,3])
-
-describe "arrayTransformer(functionSchemaArray)", ->
-  it "takes an array of functions and returns a function which takes an array and uses its values as arguments to the corresponding schema functions", ->
-    trans = core.arrayTransformer([plus1, times2])
-    expect(trans([1, 2])).to.deep.equal([2, 4])
-  it "uses identity as default when schema element is null or undefined", ->
-    trans = core.arrayTransformer([null, plus1, times2])
-    expect(trans([1,2,3,4])).to.deep.equal([1,3,6,4])
-  it "explodes with non-function schema elements", ->
-    trans = core.arrayTransformer([plus1, 0])
-    expect(-> trans([1, 2])).to.throw(/number is not a function/)
-
-describe "kozu.core.objectTemplate(functionSchemaObject)", ->
-  it "returns a function which applies function values of the given schema to its argument", ->
-    tmpl = core.objectTemplate
-      name: core.extractsKeys('first', 'last')(core.argumentJoiner(' '))
-    expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(name: "Larry Zozo")
-  it "treats non-function values as constants which end up untouched in the output", ->
-    tmpl = core.objectTemplate
-      type: "person"
-      nothing: null
-      name: core.extractsKeys('first', 'last')(core.argumentJoiner(' '))
-    expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(type: "person", nothing: null, name: "Larry Zozo")
-
-describe "kozu.core.objectPropertyTemplate(functionSchemaObject)", ->
-  it "returns a function which applies function values of the given schema to the corresponding properties of its argument", ->
-    tmpl = core.objectPropertyTemplate(name: exclaim)
-    expect(tmpl(name: "Larry Zozo", extra: "unused")).to.deep.equal(name: "Larry Zozo!")
-  it "treats non-function values as constants which end up untouched in the output", ->
-    tmpl = core.objectPropertyTemplate
-      type: "person"
-      nothing: null
-      name: exclaim
-    expect(tmpl(name: "Larry Zozo")).to.deep.equal(type: "person", nothing: null, name: "Larry Zozo!")
 
 describe "kozu.core.merge(... objects)", ->
   it "returns a new object which merges the given objects, with the keys of later objects overwriting those of previous ones", ->
@@ -154,54 +73,7 @@ describe "kozu.core.merge(... objects)", ->
     expect(result).to.not.equal(b)
     expect(result).to.not.equal(c)
 
-describe "kozu.core.mergesReturnValueOntoArgument(func)", ->
-  it "wraps func such that the return value is `merge`d onto the first argument before being returned", ->
-    f = core.mergesReturnValueOntoArgument(-> {ctx: this, args: core.slice(arguments), return: "return"})
-    expect(f.call({a: 1}, {b: 2, foo: "bar"}, {c: 3})).to.deep.equal
-      b: 2
-      foo: "bar"
-      ctx: {a: 1}
-      args: [{b: 2, foo: "bar"}, {c: 3}]
-      return: "return"
-
-describe "kozu.core.gathersThisAndArguments", ->
-  it "wraps a function such that the new version gathers its many inputs into a single array of [this, ... arguments] which is passed to the wrapped function", ->
-    result = core.gathersThisAndArguments(core.identity).call({a: 1}, 1, 2, 3)
-    expect(result).to.deep.equal [{a: 1}, 1, 2, 3]
-
-describe "kozu.core.spreadsThisAndArguments", ->
-  it "wraps a function such that the new version spreads its single array argument of [this, ... arguments] into `this` and `arguments` for the wrapped function", ->
-    result = core.spreadsThisAndArguments(-> [this, arguments])([{a: 1}, 1, 2, 3])
-    expect(result).to.deep.equal([{a: 1}, args(1, 2, 3)])
-
-describe "kozu.core.composeArray(funcs)", ->
-  it "acts like `compose`, but takes an array of functions", ->
-    times2plus1 = core.composeArray([plus1, times2])
-    expect(times2plus1(3)).to.equal(7)
-
-describe "kozu.core.transformsArgumentWith(func)", ->
-  it "returns a function wrapper which transforms the wrapped function's argument with func", ->
-    plus1wrapper = core.transformsArgumentWith(plus1)
-    expect(plus1wrapper(times2)(5)).to.equal(12)
-
-describe "kozu.core.transformsReturnValueWith(func)", ->
-  it "returns a function wrapper which transforms the wrapped function's return value with func", ->
-    plus1wrapper = core.transformsReturnValueWith(plus1)
-    expect(plus1wrapper(times2)(5)).to.equal(11)
-
 describe "kozu.core.mapper(func)", ->
   it "returns a function which takes an array and maps func onto it", ->
     mapIncrement = core.mapper(plus1)
     expect(mapIncrement([1,2,3])).to.deep.equal([2,3,4])
-
-describe "kozu.core.joiner(separator)", ->
-  it "returns a function which joins an array with the given string", ->
-    expect(core.joiner("-")(["foo", "bar"])).to.equal("foo-bar")
-
-describe "kozu.core.argumentMapper(func)", ->
-  it "returns a function which maps func onto its arguments", ->
-    expect(core.argumentMapper(plus1)(1,2,3)).to.deep.equal([2,3,4])
-
-describe "kozu.core.argumentJoiner(separator)", ->
-  it "returns a function which joins its arguments with the given string", ->
-    expect(core.argumentJoiner("-")("foo", "bar")).to.equal("foo-bar")
