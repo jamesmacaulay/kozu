@@ -70,6 +70,6 @@ module.exports = function(grunt) {
 
   // Default task.
   grunt.registerTask('default', ['jshint', 'coffee', 'browserify']);
-  grunt.registerTask('test', ['default', 'watch:test']);
+  grunt.registerTask('auto', ['default', 'watch:test']);
 
 };
