@@ -2,7 +2,13 @@ expect = require("chai").expect
 core = require("../../../../../lib/kozu/core")
 transformers = require("../../../../../lib/kozu/transformers")
 
-describe "kozu.core.arrayTransformer(functions)", ->
+plus1 = (n) -> n+1
+times2 = (n) -> n*2
+exclaim = (x) -> "#{x}!"
+argumentJoiner = core.compose(
+  core.gathersArguments,
+  core.partial(core.partialRest, core.functionalize(Array::join))
+);
 
 describe "kozu.transformers.arrayTransformer(functionSchemaArray)", ->
   it "returns a function which takes an array and maps its items with corresponding functions", ->
@@ -14,6 +20,11 @@ describe "kozu.transformers.arrayTransformer(functionSchemaArray)", ->
   it "explodes with non-function schema elements", ->
     trans = transformers.arrayTransformer([plus1, 0])
     expect(-> trans([1, 2])).to.throw(/number is not a function/)
+
+describe "kozu.transformers.transformsArgumentsWithSchema(functionSchemaArray)", ->
+  it "returns a wrapper function which returns a function that transforms its arguments with the given schema as per `arrayTransformer`", ->
+    wrapper = transformers.transformsArgumentsWithSchema([plus1, times2, exclaim])
+    expect(wrapper(core.args)(1, 2, 3)).to.deep.equal(core.args(2, 4, "3!"))
 
 describe "kozu.transformers.objectTemplate(functionSchemaObject)", ->
   it "returns a function which applies function values of the given schema to its argument", ->
