@@ -1,6 +1,6 @@
 expect = require("chai").expect
 core = require("../../../../../lib/kozu/core")
-behaviors = require("../../../../../lib/kozu/transformers")
+transformers = require("../../../../../lib/kozu/transformers")
 
 describe "kozu.core.arrayTransformer(functions)", ->
 
@@ -18,13 +18,13 @@ describe "kozu.transformers.arrayTransformer(functionSchemaArray)", ->
 describe "kozu.transformers.objectTemplate(functionSchemaObject)", ->
   it "returns a function which applies function values of the given schema to its argument", ->
     tmpl = transformers.objectTemplate
-      name: behaviors.extractsKeys('first', 'last')(core.argumentJoiner(' '))
+      name: core.extractsKeys('first', 'last')(argumentJoiner(' '))
     expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(name: "Larry Zozo")
   it "treats non-function values as constants which end up untouched in the output", ->
     tmpl = transformers.objectTemplate
       type: "person"
       nothing: null
-      name: behaviors.extractsKeys('first', 'last')(core.argumentJoiner(' '))
+      name: core.extractsKeys('first', 'last')(argumentJoiner(' '))
     expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(type: "person", nothing: null, name: "Larry Zozo")
 
 describe "kozu.transformers.objectPropertyTemplate(functionSchemaObject)", ->
