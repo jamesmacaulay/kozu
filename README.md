@@ -2,6 +2,8 @@
 
 A library for functional composition which takes promises seriously.
 
+**EXPERIMENTAL | ALPHA | PRE-RELEASE | UNSTABLE**
+
 ## hacking on kōzu
 
 In one shell session:
