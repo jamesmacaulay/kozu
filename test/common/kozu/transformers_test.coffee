@@ -5,10 +5,6 @@ transformers = require("../../../../../lib/kozu/transformers")
 plus1 = (n) -> n+1
 times2 = (n) -> n*2
 exclaim = (x) -> "#{x}!"
-argumentJoiner = core.compose(
-  core.gathersArguments,
-  core.partial(core.partialRest, core.functionalize(Array::join))
-);
 
 describe "kozu.transformers.arrayTransformer(functionSchemaArray)", ->
   it "returns a function which takes an array and maps its items with corresponding functions", ->
@@ -29,13 +25,13 @@ describe "kozu.transformers.transformsArgumentsWithSchema(functionSchemaArray)",
 describe "kozu.transformers.objectTemplate(functionSchemaObject)", ->
   it "returns a function which applies function values of the given schema to its argument", ->
     tmpl = transformers.objectTemplate
-      name: core.extractsKeys('first', 'last')(argumentJoiner(' '))
+      name: core.extractsKeys('first', 'last')(core.argumentJoiner(' '))
     expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(name: "Larry Zozo")
   it "treats non-function values as constants which end up untouched in the output", ->
     tmpl = transformers.objectTemplate
       type: "person"
       nothing: null
-      name: core.extractsKeys('first', 'last')(argumentJoiner(' '))
+      name: core.extractsKeys('first', 'last')(core.argumentJoiner(' '))
     expect(tmpl(first: "Larry", last: "Zozo")).to.deep.equal(type: "person", nothing: null, name: "Larry Zozo")
 
 describe "kozu.transformers.objectPropertyTemplate(functionSchemaObject)", ->
