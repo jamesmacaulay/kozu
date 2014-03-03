@@ -93,5 +93,13 @@ describe "kozu.promises.agnostic.objectTemplate", ->
         Array::join.call(arguments, ' ')
     expect(namer(input)).to.eventually.deep.equal({name: "Zoe Yodeller"})
 
-
-
+describe "kozu.promises.aggressivelyAgnostic", ->
+  agnosticCompose = promises.aggressivelyAgnostic(core.compose)
+  it "infects function arguments recursively", ->
+    fn = agnosticCompose(
+      ((obj) ->
+        obj.b + 1),
+      ((obj) ->
+        Promise.cast({b: Promise.cast(obj.a)}))
+    )
+    expect(fn(a: 1)).to.eventually.equal(2)
