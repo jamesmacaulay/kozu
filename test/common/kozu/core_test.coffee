@@ -5,10 +5,14 @@ plus1 = (n) -> n+1
 times2 = (n) -> n*2
 exclaim = (x) -> "#{x}!"
 
-describe "kozu.core.compose", ->
+describe "kozu.core.compose(... funcs)", ->
   it "calls from right to left", ->
     times2plus1 = core.compose(plus1, times2)
     expect(times2plus1(3)).to.equal(7)
+
+describe "kozu.core.pipe(x, ... funcs)", ->
+  it "calls funcs on x from left to right", ->
+    expect(core.pipe(3, times2, plus1)).to.equal(7)
 
 describe "kozu.core.partialRest(func, args...)", ->
   it "partial application of func with args as the rest of the args after the first", ->
