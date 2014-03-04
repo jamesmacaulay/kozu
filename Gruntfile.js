@@ -57,7 +57,7 @@ module.exports = function(grunt) {
       },
       test: {
         files: ['test/**/*', 'lib/**/*'],
-        tasks: ['jshint:test', 'coffee:test', 'browserify:test']
+        tasks: ['jshint:lib', 'jshint:test', 'coffee:test', 'browserify:test']
       },
     },
   });
