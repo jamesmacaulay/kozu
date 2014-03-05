@@ -48,12 +48,12 @@ describe "kozu.transformers.objectPropertyTemplate(functionSchemaObject)", ->
 describe "kozu.transformers.middleware(definition)", ->
   it "returns a function which applies function values of the given definition to the corresponding properties of its argument", ->
     middleware = t.middleware({
-      num: c.constantly(2),
+      num: c.constant(2),
       name: c.transformsReturnValueWith(exclaim)
     })
     result = middleware({
-      name: c.constantly("Jim"),
-      handle: c.constantly("jimmm")
+      name: c.constant("Jim"),
+      handle: c.constant("jimmm")
     })
     expect(result.num).to.equal(2)
     expect(result.name()).to.equal("Jim!")
