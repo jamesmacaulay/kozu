@@ -14,6 +14,13 @@ module.exports = function(grunt) {
       }
     },
     browserify: {
+      cells: {
+        src: ['lib/cells_demo.js'],
+        dest: 'generated/browserify/lib/cells_demo.js',
+        options: {
+          standalone: 'demo'
+        }
+      },
       lib: {
         src: ['lib/kozu.js'],
         dest: 'generated/browserify/lib/kozu.js',
@@ -55,6 +62,10 @@ module.exports = function(grunt) {
         files: '<%= jshint.lib.src %>',
         tasks: ['jshint:lib', 'browserify:lib']
       },
+      cells: {
+        files: '<%= jshint.lib.src %>',
+        tasks: ['jshint:lib', 'browserify:cells']
+      },
       test: {
         files: ['test/**/*', 'lib/**/*'],
         tasks: ['jshint:lib', 'jshint:test', 'coffee:test', 'browserify:test']
@@ -70,6 +81,7 @@ module.exports = function(grunt) {
 
   // Default task.
   grunt.registerTask('default', ['jshint', 'coffee', 'browserify']);
-  grunt.registerTask('auto', ['default', 'watch:test']);
+  grunt.registerTask('auto', ['default', 'watch:test', 'watch:lib']);
+  grunt.registerTask('cells', ['default', 'watch:cells']);
 
 };

@@ -16,8 +16,7 @@
   },
   "main": "./lib/kozu.js",
   "dependencies": {
-    "lodash": "~2.4.1",
-    "baconjs": "~0.7.6"
+    "lodash": "~2.4.1"
   },
   "optionalDependencies": {
     "es6-promise": "~0.1.1"
@@ -35,6 +34,8 @@
     "chai": "~1.8.1",
     "chai-as-promised": "~4.1.0",
     "es6-promise": "~0.1.1",
-    "sinon": "~1.7.3"
+    "sinon": "~1.7.3",
+    "baconjs": "~0.7.6",
+    "jquery": "~2.1.0"
   }
 }
