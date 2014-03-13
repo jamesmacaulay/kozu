@@ -25,7 +25,7 @@ describe "kozu.promises.isThenable(x)", ->
 
 describe "kozu.promises.whenever(x, onResolve, onReject)", ->
   it "returns x.then(onResolve, onReject) if x is a promise", ->
-    expect(promises.whenever(Promise.cast(1), inc)).to.eventually.equal(2)
+    expect(promises.whenever(Promise.resolve(1), inc)).to.eventually.equal(2)
 
   it "returns result of onResolve called with x if x is not a promise", ->
     expect(promises.whenever(1, inc)).to.equal(2)
@@ -47,11 +47,11 @@ describe "kozu.promises.allArrayItems(items)", ->
     expect(result).to.not.equal(nums)
 
   it "returns a promise of the whole result if any of the items are promises", ->
-    result = promises.allArrayItems([1, Promise.cast(2), 3, Promise.cast(4)])
+    result = promises.allArrayItems([1, Promise.resolve(2), 3, Promise.resolve(4)])
     expect(result).to.eventually.deep.equal([1,2,3,4])
 
   it "returns a promise which is rejected if one of the item promises rejects", ->
-    result = promises.allArrayItems([1, Promise.cast(2), Promise.reject(new Error("foo")), Promise.cast(4)])
+    result = promises.allArrayItems([1, Promise.resolve(2), Promise.reject(new Error("foo")), Promise.resolve(4)])
     expect(result).to.be.rejectedWith("foo")
 
 describe "kozu.promises.allObjectValues(object)", ->
@@ -62,11 +62,11 @@ describe "kozu.promises.allObjectValues(object)", ->
     expect(result).to.not.equal(nums)
 
   it "returns a promise of the whole result if any of the object's values are promises", ->
-    result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: 3, d: Promise.cast(4)})
+    result = promises.allObjectValues({a: 1, b: Promise.resolve(2), c: 3, d: Promise.resolve(4)})
     expect(result).to.eventually.deep.equal({a: 1, b: 2, c: 3, d: 4})
 
   it "returns a promise which is rejected if one of the value promises rejects", ->
-    result = promises.allObjectValues({a: 1, b: Promise.cast(2), c: Promise.reject(new Error("foo")), d: Promise.cast(4)})
+    result = promises.allObjectValues({a: 1, b: Promise.resolve(2), c: Promise.reject(new Error("foo")), d: Promise.resolve(4)})
     expect(result).to.be.rejectedWith("foo")
 
 describe "kozu.promises.shallowAgnostic(func)", ->
@@ -76,17 +76,17 @@ describe "kozu.promises.shallowAgnostic(func)", ->
     expect(result).to.equal(5)
 
   it "returns a function which returns a promise when its context is a promise", ->
-    result = promises.shallowAgnostic(plusMethod).call(Promise.cast(2), 3)
+    result = promises.shallowAgnostic(plusMethod).call(Promise.resolve(2), 3)
     expect(result).to.eventually.equal(5)
 
   it "returns a function which returns a promise when one of its arguments is a promise", ->
-    result = promises.shallowAgnostic(plus)(2, Promise.cast(3))
+    result = promises.shallowAgnostic(plus)(2, Promise.resolve(3))
     expect(result).to.eventually.equal(5)
 
 describe "kozu.promises.agnostic.objectTemplate", ->
   it "is pretty nice", ->
     input =
-      first: Promise.cast("Zoe")
+      first: Promise.resolve("Zoe")
       last: "Yodeller"
     namer = promises.agnostic.objectTemplate
       name: core.extractsKeys('first', 'last') ->
@@ -100,6 +100,6 @@ describe "kozu.promises.aggressivelyAgnostic", ->
       ((obj) ->
         obj.b + 1),
       ((obj) ->
-        Promise.cast({b: Promise.cast(obj.a)}))
+        Promise.resolve({b: Promise.resolve(obj.a)}))
     )
     expect(fn(a: 1)).to.eventually.equal(2)
