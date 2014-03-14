@@ -101,18 +101,8 @@ describe "kozu.promises.shallowAgnostic(func)", ->
     result = promises.shallowAgnostic(plus)(2, Promise.resolve(3))
     expect(result).to.eventually.equal(5)
 
-describe "kozu.promises.agnostic.objectTemplate", ->
-  it "is pretty nice", ->
-    input =
-      first: Promise.resolve("Zoe")
-      last: "Yodeller"
-    namer = promises.agnostic.objectTemplate
-      name: core.extractsKeys('first', 'last') ->
-        Array::join.call(arguments, ' ')
-    expect(namer(input)).to.eventually.deep.equal({name: "Zoe Yodeller"})
-
-describe "kozu.promises.aggressivelyAgnostic", ->
-  agnosticCompose = promises.aggressivelyAgnostic(core.compose)
+describe "kozu.promises.agnostic", ->
+  agnosticCompose = promises.agnostic(core.compose)
   it "infects function arguments recursively", ->
     fn = agnosticCompose(
       ((obj) ->
@@ -128,7 +118,7 @@ describe "kozu.promises.aggressivelyAgnostic", ->
         Promise.resolve({name: "Sally"})
       ]
     )
-    arrayPromise.map = promises.aggressivelyAgnostic(Array.prototype.map || core.methodize(core.map))
+    arrayPromise.map = promises.agnostic(Array.prototype.map || core.methodize(core.map))
     names = arrayPromise.map(core.getter('name'))
     expect(names).to.eventually.deep.equal(["Jim", "Sally"])
 
