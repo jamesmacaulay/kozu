@@ -114,3 +114,12 @@ describe "kozu.promises.aggressivelyAgnostic", ->
     names = arrayPromise.map(core.getter('name'))
     expect(names).to.eventually.deep.equal(["Jim", "Sally"])
 
+describe "kozu.promises.promiseExtender(prototype)", ->
+  it "returns a function which takes a promise and extends it with agnostic version's of the prototype's methods", ->
+    prototype = {number: 1, getNumber: core.methodize(core.getter("number"))}
+    getNumberExtender = promises.promiseExtender(prototype)
+    promise = Promise.resolve({number: 2})
+    expect(core.keys(getNumberExtender({}))).to.deep.equal(['getNumber'])
+    expect(getNumberExtender(promise).getNumber()).to.eventually.equal(2)
+
+
