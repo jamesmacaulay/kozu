@@ -33,6 +33,24 @@ describe "kozu.promises.whenever(x, onResolve, onReject)", ->
   it "returns a rejection promise handled with onReject when an error is thrown applying onResolve to non-promise x", ->
     expect(promises.whenever(1, -> throw new Error("foo"))).to.be.rejectedWith("foo")
 
+describe "kozu.promises.wait(delay, value)", ->
+  it "returns a promise which resolves to `value` after the given `delay` in milliseconds", ->
+    expect(promises.wait(1, "something")).to.eventually.equal("something");
+
+describe "kozu.promises.errorTimeout(delay, [msg])", ->
+  it "returns a promise which rejects after `delay` milliseconds", ->
+    expect(promises.errorTimeout(1)).to.be.rejectedWith("Timed out")
+  it "takes an optional error message", ->
+    expect(promises.errorTimeout(1, "no more time!")).to.be.rejectedWith("no more time!")
+
+describe "kozu.promises.timeoutAfter(delay, promise)", ->
+  it "returns a promise which resolves to the resolved value of `promise` if `promise` resolves before `delay` milliseconds", ->
+    promise = promises.timeoutAfter(10, promises.wait(5, "something"))
+    expect(promise).to.eventually.equal("something")
+  it "returns a promise which reject if `promise` does not resolve before `delay` milliseconds", ->
+    promise = promises.timeoutAfter(5, promises.wait(10, "something"))
+    expect(promise).to.be.rejectedWith("Timed out")
+
 describe "kozu.promises.allArrayItems(items)", ->
   it "returns a copy of items when items is an array of non-promise values", ->
     nums = [1,2,3]
