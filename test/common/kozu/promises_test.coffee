@@ -103,3 +103,14 @@ describe "kozu.promises.aggressivelyAgnostic", ->
         Promise.resolve({b: Promise.resolve(obj.a)}))
     )
     expect(fn(a: 1)).to.eventually.equal(2)
+  it "returns functions which are agnostic about `this`", ->
+    arrayPromise = Promise.resolve(
+      [
+        Promise.resolve({name: "Jim"}),
+        Promise.resolve({name: "Sally"})
+      ]
+    )
+    arrayPromise.map = promises.aggressivelyAgnostic(Array.prototype.map || core.methodize(core.map))
+    names = arrayPromise.map(core.getter('name'))
+    expect(names).to.eventually.deep.equal(["Jim", "Sally"])
+
